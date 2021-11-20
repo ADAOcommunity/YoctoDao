@@ -11,6 +11,18 @@
 {-# LANGUAGE TypeOperators       #-}
 {-# LANGUAGE LambdaCase          #-}
 
+module Yocto (
+  Voting (..)
+  , votingPassValidator
+  , votingPassValidatorInstance
+  , votingPassValidatorHash
+  , votingPassValidatorScript
+  , votingPassScriptAddress
+  , curSymbol
+  , policy
+  , mkPolicy
+             ) where
+
 import           Control.Monad          hiding (fmap)
 import qualified Data.Map               as Map
 import           Data.Text              (Text)
@@ -34,6 +46,12 @@ import           Data.String          (IsString (..))
 import           Data.Aeson           (ToJSON, FromJSON)
 import           Playground.Contract
 
+newtype VotingDatum = VotingDatum BuiltinData deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+PlutusTx.makeLift ''VotingDatum
+
+newtype VotingRedeemer = VotingRedeemer BuiltinData deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+PlutusTx.makeLift ''VotingRedeemer
+
 {-# INLINABLE votingPassValidator #-}
 votingPassValidator :: AssetClass -> BuiltinData -> BuiltinData -> ScriptContext -> Bool
 votingPassValidator asset _ _ ctx =
@@ -50,8 +68,8 @@ votingPassValidator asset _ _ ctx =
 -- We need this because we are returning a Boolean above.
 data Voting
 instance Scripts.ValidatorTypes Voting where
-    type instance DatumType Voting = BuiltinData
-    type instance RedeemerType Voting = BuiltinData
+    type instance DatumType Voting = VotingDatum
+    type instance RedeemerType Voting = VotingRedeemer
 
 
 -- This section allows for the code above to be easily compiled to the information necessary to deploy on chain.
@@ -90,3 +108,4 @@ policy asset = mkMintingPolicyScript $
 
 curSymbol :: AssetClass -> CurrencySymbol
 curSymbol asset = scriptCurrencySymbol $ policy asset
+
