@@ -79,7 +79,7 @@ votingPassValidatorInstance asset = Scripts.mkTypedValidator @Voting
     `PlutusTx.applyCode`
     PlutusTx.liftCode asset)
     $$(PlutusTx.compile [|| wrap ||]) where
-        wrap = Scripts.wrapValidator @BuiltinData @BuiltinData
+        wrap = Scripts.wrapValidator @VotingDatum @VotingRedeemer
 
 votingPassValidatorHash :: AssetClass -> ValidatorHash
 votingPassValidatorHash = Scripts.validatorHash . votingPassValidatorInstance
