@@ -57,20 +57,20 @@ newtype VotingRedeemer = VotingRedeemer BuiltinData deriving newtype (PlutusTx.T
 PlutusTx.makeLift ''VotingRedeemer
 
 type DAOSchema =
-        Endpoint     "newGrant" GrantFundParams -- Set up new fund
-        .\/ Endpoint "fund"     FundParams      -- Fund contract
-        .\/ Endpoint "vote"     VoteParams      -- Vote for recipient
-        .\/ Endpoint "disburse" DisburseParams  -- Sends funds to
-        -- recipinent and implies consent to contract terms else
-        -- allows for the return of all funds to donors after deadline
-        .\/ Endpoint "update"   UpdateParams    -- Burns old tokens and
-        -- updates DAO
+        Endpoint     "newFund"  FundParams   -- set up new fund
+        .\/ Endpoint "fund"     FundParams   -- donate to address
+        .\/ Endpoint "disburse" DisbeParams -- sends to recipient and
+                                             -- implies consent to
+                                             -- contract terms
+        .\/ Endpoint "update"   UpdateParams -- Burns old tokens and
+                                             -- updates DAO
 
 {-# INLINABLE votingPassValidator #-}
 votingPassValidator :: AssetClass -> VotingDatum -> VotingRedeemer -> ScriptContext -> Bool
 votingPassValidator asset vd vr ctx =
   let
       txInfo = scriptContextTxInfo ctx
+
       -- We map over all of the inputs to the transaction to gather
       -- the number of votes present.
       txInValues = [txOutValue $ txInInfoResolved txIn | txIn <- txInfoInputs $ scriptContextTxInfo ctx]
@@ -124,35 +124,8 @@ policy asset = mkMintingPolicyScript $
 curSymbol :: AssetClass -> CurrencySymbol
 curSymbol asset = scriptCurrencySymbol $ policy asset
 
-data GrantFundParams = GrantFundParams
-  { ammountInFund :: Value
-  , idOfFund :: ByteString
-  }
-  deriving stock (Haskell.Eq, Haskell.Show, Generic)
-  deriving anyclass (FromJSON, ToJSON, ToSchema, ToArgument)
-
-data FundParams = FundParams
-  { ammountToFund :: Value
-  , idOfFund :: ByteString
-  }
-  deriving stock (Haskell.Eq, Haskell.Show, Generic)
-  deriving anyclass (FromJSON, ToJSON, ToSchema, ToArgument)
-
-data VoteParams = VoteParams
-  { ammountInFund :: Value
-  , idOfFund :: ByteString
-  }
-  deriving stock (Haskell.Eq, Haskell.Show, Generic)
-  deriving anyclass (FromJSON, ToJSON, ToSchema, ToArgument)
-
-newGrantFund :: AsContractError e => Promise () DAOSchema e ()
-newGrantFund = endpoint @"newGrantFund" @GrantFundParams $ \(GrantFundParams amt id) -> do
-    logInfo @Haskell.String $ "Create new grant " <> Haskell.show id <> " for " <> Haskell.show amt <> " ada"
-    let tx         = Constraints.mustPayToTheScript 
-    void (submitTxConstraints gameInstance tx)
-
-fund :: AsContractError e => Promise () DAOSchema e ()
-fund = endpoint @"fund" @FundParams $ \(FundParams amt id) -> do
-    logInfo @Haskell.String $ "Pay " <> Haskell.show amt <> " to the the grant fund"
-    let tx         = Constraints.mustPayToTheScript amt
+fund :: AsContractError e => Promise () GameSchema e ()
+fund = endpoint @"fund" @FundParams $ \(FundParams secret amt) -> do
+    logInfo @Haskell.String $ "Pay " <> Haskell.show amt <> " to the script"
+    let tx         = Constraints.mustPayToTheScript (hashString secret) amt
     void (submitTxConstraints gameInstance tx)
