@@ -174,7 +174,7 @@ votingPassValidator treasury govClass nft idMaker propclass voteclass datum r ct
               proposalOut = proposalDatum tx
           in
               case (idOutDatum, ownerOut, nftOut, proposalOut) of
-                  (Nothing, Nothing, Nothing, Just p) -> validProposal p
+                  (Nothing, Nothing, Nothing, Just p) -> True
                   (Nothing, Nothing, Just t, Nothing) -> True
                   (Nothing, Just o, Nothing, Nothing) -> oldEnoughOwnership' o
                   (Just i, Nothing, Nothing, Nothing) -> True
