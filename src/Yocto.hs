@@ -13,6 +13,8 @@
 
 module Yocto (
   Voting (..)
+  , VotingDatum (..)
+  , VotingRedeemer (..)
   , votingPassValidator
   , votingPassValidatorInstance
   , votingPassValidatorHash
@@ -49,11 +51,12 @@ import           Playground.Contract
 newtype VotingDatum = VotingDatum BuiltinData deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 PlutusTx.makeLift ''VotingDatum
 
-newtype VotingRedeemer = VotingRedeemer BuiltinData deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+-- Need to specify exactly how the voting will be performed
+newtype VotingRedeemer = VotingRedeemer (Address, Value) deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 PlutusTx.makeLift ''VotingRedeemer
 
 {-# INLINABLE votingPassValidator #-}
-votingPassValidator :: AssetClass -> BuiltinData -> BuiltinData -> ScriptContext -> Bool
+votingPassValidator :: AssetClass -> VotingDatum -> VotingRedeemer -> ScriptContext -> Bool
 votingPassValidator asset _ _ ctx =
   let
       txInfo = scriptContextTxInfo ctx
@@ -108,4 +111,3 @@ policy asset = mkMintingPolicyScript $
 
 curSymbol :: AssetClass -> CurrencySymbol
 curSymbol asset = scriptCurrencySymbol $ policy asset
-
