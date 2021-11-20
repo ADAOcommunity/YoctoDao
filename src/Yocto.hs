@@ -51,13 +51,18 @@ import           Playground.Contract
 newtype VotingDatum = VotingDatum BuiltinData deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 PlutusTx.makeLift ''VotingDatum
 
--- Need to specify exactly how the voting will be performed
-newtype VotingRedeemer = VotingRedeemer (Address, Value) deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+-- Need to specify exactly how the voting will be performed. However,
+-- the BuiltinData type is probably flexible enough for now.
+newtype VotingRedeemer = VotingRedeemer BuiltinData deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 PlutusTx.makeLift ''VotingRedeemer
+
+type DAOSchema =
+        Endpoint "fund" FundParams
+        .\/ Endpoint "update" UpdateParams
 
 {-# INLINABLE votingPassValidator #-}
 votingPassValidator :: AssetClass -> VotingDatum -> VotingRedeemer -> ScriptContext -> Bool
-votingPassValidator asset _ _ ctx =
+votingPassValidator asset vd vr ctx =
   let
       txInfo = scriptContextTxInfo ctx
 
