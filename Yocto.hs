@@ -477,7 +477,7 @@ votingPassScriptAddress treasury govClass nft idMaker propclass voteclass = Ledg
 
 {-# INLINABLE treasuryValidator #-}
 treasuryValidator :: AssetClass -> BuiltinData -> BuiltinData -> ScriptContext -> Bool
-treasuryValidatorScript daoID _ _ ctx =
+treasuryValidator daoID _ _ ctx =
   let
       txInfo = scriptContextTxInfo ctx
 
@@ -488,16 +488,21 @@ treasuryValidatorScript daoID _ _ ctx =
   in
       traceIfFalse "The DAO's NFT is not present." (votes > 0)
 
-treasuryValidatorInstance :: AssetClass -> Scripts.TypedValidator Voting
-treasuryValidatorInstance asset = Scripts.mkTypedValidator @Voting
+data TreasuryData
+instance Scripts.ValidatorTypes TreasuryData where
+    type instance DatumType TreasuryData = BuiltinData
+    type instance RedeemerType TreasuryData = BuiltinData
+
+treasuryValidatorInstance :: AssetClass -> Scripts.TypedValidator TreasuryData
+treasuryValidatorInstance asset = Scripts.mkTypedValidator @TreasuryData
     ($$(PlutusTx.compile [|| treasuryValidator ||])
     `PlutusTx.applyCode`
     PlutusTx.liftCode asset)
     $$(PlutusTx.compile [|| wrap ||]) where
         wrap = Scripts.wrapValidator @BuiltinData @BuiltinData
 
-treaasuryValidatorHash :: AssetClass -> ValidatorHash
-treaasuryValidatorHash = Scripts.validatorHash . treasuryValidatorInstance
+treasuryValidatorHash :: AssetClass -> ValidatorHash
+treasuryValidatorHash = Scripts.validatorHash . treasuryValidatorInstance
 
 treasuryValidatorScript :: AssetClass -> Validator
 treasuryValidatorScript = Scripts.validatorScript . treasuryValidatorInstance
