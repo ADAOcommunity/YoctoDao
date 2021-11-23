@@ -475,10 +475,40 @@ votingPassValidatorScript treasury govClass nft idMaker propclass voteclass = Sc
 votingPassScriptAddress :: ValidatorHash -> AssetClass -> AssetClass -> AssetClass -> AssetClass -> AssetClass -> Address
 votingPassScriptAddress treasury govClass nft idMaker propclass voteclass = Ledger.scriptAddress $ votingPassValidatorScript treasury govClass nft idMaker propclass voteclass
 
--- This section manages the Governance Token. Should this section change a reissuance of gov tokens is required.
-{-# INLINABLE mkPolicy #-} -- AssetClass used as input should be the DAO's NFT. The script manages the treasury through spending of the NFT.
+{-# INLINABLE treasuryValidator #-}
+treasuryValidator :: AssetClass -> BuiltinData -> BuiltinData -> ScriptContext -> Bool
+treasuryValidatorScript daoID _ _ ctx =
+  let
+      txInfo = scriptContextTxInfo ctx
+
+      -- We map over all of the inputs to the transaction to gather the number of votes present.
+      txInValues = [txOutValue $ txInInfoResolved txIn | txIn <- txInfoInputs $ scriptContextTxInfo ctx]
+      tokenValues = [assetClassValueOf val daoID | val <- txInValues]
+      votes = sum tokenValues -- sum the occurrences of the tokenClass inside of txInValues
+  in
+      traceIfFalse "The DAO's NFT is not present." (votes > 0)
+
+treasuryValidatorInstance :: AssetClass -> Scripts.TypedValidator Voting
+treasuryValidatorInstance asset = Scripts.mkTypedValidator @Voting
+    ($$(PlutusTx.compile [|| treasuryValidator ||])
+    `PlutusTx.applyCode`
+    PlutusTx.liftCode asset)
+    $$(PlutusTx.compile [|| wrap ||]) where
+        wrap = Scripts.wrapValidator @BuiltinData @BuiltinData
+
+treaasuryValidatorHash :: AssetClass -> ValidatorHash
+treaasuryValidatorHash = Scripts.validatorHash . treasuryValidatorInstance
+
+treasuryValidatorScript :: AssetClass -> Validator
+treasuryValidatorScript = Scripts.validatorScript . treasuryValidatorInstance
+
+treasuryValidatorAddress :: AssetClass -> Address
+treasuryValidatorAddress = Ledger.scriptAddress . treasuryValidatorScript
+
+-- This section manages the Governance and Identity tokens within our system.
+{-# INLINABLE mkPolicy #-}
 mkPolicy :: AssetClass -> BuiltinData -> ScriptContext -> Bool
-mkPolicy asset _ ctx = traceIfFalse "The DAO's NFT is not present." (nftSum > 0)
+mkPolicy asset _ ctx = traceIfFalse "The required NFT is not present." (nftSum > 0)
   where
     txInfo = scriptContextTxInfo ctx
     txInValues = [txOutValue $ txInInfoResolved txIn | txIn <- txInfoInputs $ scriptContextTxInfo ctx]
