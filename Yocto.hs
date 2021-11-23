@@ -10,9 +10,9 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 {-# LANGUAGE LambdaCase          #-}
-{-# OPTIONS_GHC -fno-strictness #-}
-{-# OPTIONS_GHC -fno-ignore-interface-pragmas #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
+--- {-# OPTIONS_GHC -fno-strictness #-}
+--- {-# OPTIONS_GHC -fno-ignore-interface-pragmas #-}
+--- {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Fracada where
 
@@ -300,8 +300,8 @@ votingPassValidator treasury govClass nft idMaker propclass voteclass datum r ct
               ownershipOutputDatums = [ownershipDatum txInfo tx | tx <- (txInfoOutputs txInfo), PlutusTx.Maybe.isJust (ownershipDatum txInfo tx)]
               validOutputs = [validOwnerOutput txInfo datum | datum <- ownershipOutputDatums, PlutusTx.Maybe.isJust datum]
           in
-              True -- ownershipInputs == ownershipSigned &&
-               -- foldr (&&) True validOutputs
+              ownershipInputs == ownershipSigned &&
+              and validOutputs
 
         compareProposals' :: Integer -> Proposal -> Proposal -> Bool
         compareProposals' votes before after =
