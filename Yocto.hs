@@ -14,8 +14,6 @@
 --- {-# OPTIONS_GHC -fno-ignore-interface-pragmas #-}
 --- {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Fracada where
-
 import           Control.Monad          hiding (fmap)
 import           PlutusTx.Maybe
 import qualified Data.Map               as Map
